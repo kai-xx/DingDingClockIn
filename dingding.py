@@ -3,9 +3,6 @@ __author__ = 'double k'
 
 """
 唤醒APP
-工作位置
-x/2
-y/1.05
 """
 
 import time
@@ -81,7 +78,7 @@ def screenshot_prepare():
 
 # 随机打卡时间段
 def random_minute():
-    return random.randint(30,50)
+    return random.randint(30, 50)
 
 # 包装循环函数，传入随机打卡时间点
 def incode_loop(func,minute):
