@@ -3,6 +3,9 @@ __author__ = 'double k'
 
 """
 唤醒APP
+工作位置
+x/2
+y/1.05
 """
 
 import time
@@ -15,11 +18,10 @@ import random
 import sched
 
 config = configparser.ConfigParser(allow_no_value=False)
-config.read("dingding.cfg")
+config.read("./wakeUpApp/dingding.cfg")
 scheduler = sched.scheduler(time.time, time.sleep)
 go_hour = int(config.get("time", "go_hour"))
 back_hour = int(config.get("time", "back_hour"))
-
 def screenshot_prepare():
     """
     打开APP
@@ -45,7 +47,7 @@ def screenshot_prepare():
         if "isStatusBarKeyguard=true" in isStatusBarKeyguard:
             time.sleep(2)
             print("解锁屏保")
-            # 左右滑动才好解锁,并且延迟100ms启动
+            # 滑动解锁
             os.system('adb shell \"input swipe  300 1000 300 500\"')
             # time.sleep(1)
             # print("输入密码")
@@ -66,7 +68,7 @@ def screenshot_prepare():
         xy = os.popen("adb shell wm size").read().strip('\n')
         xyobj = re.search(re.compile("\d+x\d+"), xy).group().split("x")
         if len(xyobj) == 2:
-            time.sleep(5)
+            time.sleep(8)
             x = int(xyobj[0]) / 2
             y = int(xyobj[1]) / 1.05
             os.system('adb shell \"input tap %s %s\"' % (x, y))
@@ -78,7 +80,7 @@ def screenshot_prepare():
 
 # 随机打卡时间段
 def random_minute():
-    return random.randint(30, 50)
+    return random.randint(30,50)
 
 # 包装循环函数，传入随机打卡时间点
 def incode_loop(func,minute):
@@ -89,7 +91,7 @@ def incode_loop(func,minute):
     :return: None
     """
     # 判断时间当超过上班时间则打下班卡。否则则打上班卡。
-    if datetime.datetime.now().hour >=go_hour and datetime.datetime.now().hour <back_hour:
+    if datetime.datetime.now().hour >=go_hour and datetime.datetime.now().hour <= back_hour:
         # 用来分类上班和下班。作为参数传入任务调度
         hourtype = 1
         print("下班打卡-下次将在", str(back_hour), ":", str(minute), "打卡")
@@ -114,20 +116,20 @@ def start_loop(hourtype,minute):
     hourtype = hourtype
     # 上班，不是周末（双休），小时对应，随机分钟对应
     if hourtype == 2 and now_hour == go_hour and now_minute == minute and is_weekend():
-        print("hourtype",str(hourtype),"now_hour",str(now_hour),"now_minute",str(now_minute))
+        print("hourtype", str(hourtype), "now_hour", str(now_hour), "now_minute", str(now_minute))
         random_time = random_minute()
         screenshot_prepare()
         scheduler.enter(0,0,incode_loop,(start_loop,random_time,))
         return
     if hourtype == 1 and now_hour == back_hour and now_minute == minute and is_weekend():
-        print("hourtype", str(hourtype), "now_hour", str(now_hour),"now_minute",str(now_minute))
+        print("hourtype", str(hourtype), "now_hour", str(now_hour), "now_minute", str(now_minute))
         random_time = random_minute()
         screenshot_prepare()
-        scheduler.enter(0, 0, incode_loop,(start_loop,random_time,))
+        scheduler.enter(0, 0, incode_loop, (start_loop,random_time,))
         return
     else:
-        print(now_hour,':',now_minute)
-        scheduler.enter(60,0,start_loop,(hourtype,minute,))
+        print("现在时间：", now_hour, ':', now_minute)
+        scheduler.enter(60, 0, start_loop, (hourtype, minute, ))
         return
 
 # 是否是周末
@@ -137,6 +139,7 @@ def is_weekend():
     """
     now_time = datetime.datetime.now().strftime("%w")
     if now_time == "6" or now_time == "0":
+        print("今天周末不打卡")
         return False
     else:
         return True
