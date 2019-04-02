@@ -18,6 +18,7 @@ import random
 import sched
 
 config = configparser.ConfigParser(allow_no_value=False)
+# .cfg路径根据自己实际情况修改
 config.read("./wakeUpApp/dingding.cfg")
 scheduler = sched.scheduler(time.time, time.sleep)
 go_hour = int(config.get("time", "go_hour"))
