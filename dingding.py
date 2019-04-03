@@ -16,14 +16,51 @@ import configparser
 import datetime
 import random
 import sched
-
+path = os.getcwd() + "\\DingDingClockIn\\"
 config = configparser.ConfigParser(allow_no_value=False)
 # .cfg路径根据自己实际情况修改
-config.read("./wakeUpApp/dingding.cfg")
+config.read( path + "dingding.cfg")
 scheduler = sched.scheduler(time.time, time.sleep)
 go_hour = int(config.get("time", "go_hour"))
 back_hour = int(config.get("time", "back_hour"))
-def screenshot_prepare():
+def wakeUpTheScreen():
+    displayPowerState = os.popen(
+        "adb shell \"dumpsys power | grep 'Display Power: state=' \"").read().strip('\n')
+    if displayPowerState == 'Display Power: state=OFF':
+        print("唤醒屏幕")
+        os.system("adb shell \"input keyevent 26\"")
+    else:
+        print("屏幕已开启不需要唤醒")
+def deblocking():
+    isStatusBarKeyguard = os.popen(
+        "adb shell \"dumpsys window policy|grep isStatusBarKeyguard \"").read().strip(
+        '\n')
+    # print(isStatusBarKeyguard)
+    # return
+    if "isStatusBarKeyguard=true" in isStatusBarKeyguard:
+        time.sleep(2)
+        print("解锁屏保")
+        # 滑动解锁
+        os.system('adb shell \"input swipe  300 1000 300 500\"')
+        # time.sleep(1)
+        # print("输入密码")
+        # os.system('adb shell \"input text 95729\"')
+    else:
+        print("屏幕已解锁不需要再次解锁")
+
+def screencap(hourtype):
+    if hourtype == 2:
+        pref = "go"
+    else:
+        pref = "back"
+    fileName = pref + "-" + time.strftime("%Y%m%d%H%M%S") + ".png"
+    recordPath = path + "record\\"
+    dir = recordPath + fileName
+    os.system("adb shell screencap -p sdcard/screen.png")
+    os.system("adb pull sdcard/screen.png %s" % dir)
+    os.system("adb shell rm -r sdcard/screen.png")
+    print("screencap to computer success")
+def screenshot_prepare(hourtype):
     """
     打开APP
     :return:
@@ -33,28 +70,11 @@ def screenshot_prepare():
         打开app 
         """
         appName = "com.alibaba.android.rimet"
-        displayPowerState = os.popen(
-            "adb shell \"dumpsys power | grep 'Display Power: state=' \"").read().strip('\n')
-        if displayPowerState == 'Display Power: state=OFF':
-            print("唤醒屏幕")
-            os.system("adb shell \"input keyevent 26\"")
-        else:
-            print("屏幕已开启不需要唤醒")
-        isStatusBarKeyguard = os.popen(
-            "adb shell \"dumpsys window policy|grep isStatusBarKeyguard \"").read().strip(
-            '\n')
-        # print(isStatusBarKeyguard)
-        # return
-        if "isStatusBarKeyguard=true" in isStatusBarKeyguard:
-            time.sleep(2)
-            print("解锁屏保")
-            # 滑动解锁
-            os.system('adb shell \"input swipe  300 1000 300 500\"')
-            # time.sleep(1)
-            # print("输入密码")
-            # os.system('adb shell \"input text 95729\"')
-        else:
-            print("屏幕已解锁不需要再次解锁")
+        # 唤醒屏幕
+        wakeUpTheScreen()
+        # 解锁
+        deblocking()
+
         time.sleep(1)
         # 获取正在启动的APP
         mFocusedActivity = os.popen(
@@ -67,9 +87,12 @@ def screenshot_prepare():
         os.system(
             "adb shell \"monkey -p %s -c android.intent.category.LAUNCHER 1\"" % (appName, ))
         xy = os.popen("adb shell wm size").read().strip('\n')
+
         xyobj = re.search(re.compile("\d+x\d+"), xy).group().split("x")
         if len(xyobj) == 2:
-            time.sleep(8)
+            time.sleep(7)
+            # 截屏
+            screencap(hourtype)
             x = int(xyobj[0]) / 2
             y = int(xyobj[1]) / 1.05
             os.system('adb shell \"input tap %s %s\"' % (x, y))
@@ -92,7 +115,7 @@ def incode_loop(func,minute):
     :return: None
     """
     # 判断时间当超过上班时间则打下班卡。否则则打上班卡。
-    if datetime.datetime.now().hour >=go_hour and datetime.datetime.now().hour <= back_hour:
+    if datetime.datetime.now().hour >=go_hour and datetime.datetime.now().hour <= back_hour and datetime.datetime.now().minute <= minute:
         # 用来分类上班和下班。作为参数传入任务调度
         hourtype = 1
         print("下班打卡-下次将在", str(back_hour), ":", str(minute), "打卡")
@@ -119,13 +142,13 @@ def start_loop(hourtype,minute):
     if hourtype == 2 and now_hour == go_hour and now_minute == minute and is_weekend():
         print("hourtype", str(hourtype), "now_hour", str(now_hour), "now_minute", str(now_minute))
         random_time = random_minute()
-        screenshot_prepare()
+        screenshot_prepare(hourtype)
         scheduler.enter(0,0,incode_loop,(start_loop,random_time,))
         return
     if hourtype == 1 and now_hour == back_hour and now_minute == minute and is_weekend():
         print("hourtype", str(hourtype), "now_hour", str(now_hour), "now_minute", str(now_minute))
         random_time = random_minute()
-        screenshot_prepare()
+        screenshot_prepare(hourtype)
         scheduler.enter(0, 0, incode_loop, (start_loop,random_time,))
         return
     else:
