@@ -16,13 +16,15 @@ import configparser
 import datetime
 import random
 import sched
+scheduler = sched.scheduler(time.time, time.sleep)
 path = os.getcwd() + "\\DingDingClockIn\\"
 config = configparser.ConfigParser(allow_no_value=False)
 # .cfg路径根据自己实际情况修改
 config.read( path + "dingding.cfg")
-scheduler = sched.scheduler(time.time, time.sleep)
 go_hour = int(config.get("time", "go_hour"))
 back_hour = int(config.get("time", "back_hour"))
+# go_hour = 8
+# back_hour = 17
 def wakeUpTheScreen():
     displayPowerState = os.popen(
         "adb shell \"dumpsys power | grep 'Display Power: state=' \"").read().strip('\n')
@@ -120,8 +122,12 @@ def incode_loop(func,minute):
         hourtype = 1
         print("下班打卡-下次将在", str(back_hour), ":", str(minute), "打卡")
     else:
-        hourtype = 2
-        print("上班打卡-下次将在", str(go_hour), ":", str(minute), "打卡")
+        if datetime.datetime.now().minute <= minute:
+            hourtype = 2
+            print("上班打卡-下次将在", str(go_hour), ":", str(minute), "打卡")
+        else:
+            hourtype = 1
+            print("下班打卡-下次将在", str(back_hour), ":", str(minute), "打卡")
     #执行任务调度函数
     func(hourtype, minute)
 
