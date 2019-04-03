@@ -122,12 +122,8 @@ def incode_loop(func,minute):
         hourtype = 1
         print("下班打卡-下次将在", str(back_hour), ":", str(minute), "打卡")
     else:
-        if datetime.datetime.now().minute <= minute:
-            hourtype = 2
-            print("上班打卡-下次将在", str(go_hour), ":", str(minute), "打卡")
-        else:
-            hourtype = 1
-            print("下班打卡-下次将在", str(back_hour), ":", str(minute), "打卡")
+        hourtype = 2
+        print("上班打卡-下次将在", str(go_hour), ":", str(minute), "打卡")
     #执行任务调度函数
     func(hourtype, minute)
 
