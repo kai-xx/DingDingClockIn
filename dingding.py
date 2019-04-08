@@ -39,7 +39,7 @@ def deblocking():
         '\n')
     # print(isStatusBarKeyguard)
     # return
-    if "isStatusBarKeyguard=true" in isStatusBarKeyguard:
+    if "isStatusBarKeyguard=false" in isStatusBarKeyguard:
         time.sleep(2)
         print("解锁屏保")
         # 滑动解锁
@@ -92,9 +92,10 @@ def screenshot_prepare(hourtype):
 
         xyobj = re.search(re.compile("\d+x\d+"), xy).group().split("x")
         if len(xyobj) == 2:
-            time.sleep(7)
+            time.sleep(8)
             # 截屏
             screencap(hourtype)
+            time.sleep(2)
             x = int(xyobj[0]) / 2
             y = int(xyobj[1]) / 1.05
             os.system('adb shell \"input tap %s %s\"' % (x, y))
@@ -117,7 +118,7 @@ def incode_loop(func,minute):
     :return: None
     """
     # 判断时间当超过上班时间则打下班卡。否则则打上班卡。
-    if datetime.datetime.now().hour >=go_hour and datetime.datetime.now().hour <= back_hour and datetime.datetime.now().minute <= minute:
+    if datetime.datetime.now().hour >=go_hour and datetime.datetime.now().hour < back_hour :
         # 用来分类上班和下班。作为参数传入任务调度
         hourtype = 1
         print("下班打卡-下次将在", str(back_hour), ":", str(minute), "打卡")
