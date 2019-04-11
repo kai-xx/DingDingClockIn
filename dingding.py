@@ -155,7 +155,11 @@ def start_loop(hourtype,minute):
         scheduler.enter(0, 0, incode_loop, (start_loop,random_time,))
         return
     else:
-        print("现在时间：", now_hour, ':', now_minute)
+        if hourtype ==1:
+            nextHour = back_hour
+        else:
+            nextHour = go_hour
+        print("现在时间：", now_hour, ':', now_minute, "--下次执行事件", nextHour, ":", minute)
         scheduler.enter(60, 0, start_loop, (hourtype, minute, ))
         return
 
