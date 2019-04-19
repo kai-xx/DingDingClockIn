@@ -44,9 +44,9 @@ def deblocking():
         print("解锁屏保")
         # 滑动解锁
         os.system('adb shell \"input swipe  300 1000 300 500\"')
-        # time.sleep(1)
-        # print("输入密码")
-        # os.system('adb shell \"input text 95729\"')
+        time.sleep(1)
+        print("输入密码")
+        os.system('adb shell \"input text 910510\"')
     else:
         print("屏幕已解锁不需要再次解锁")
 
@@ -99,6 +99,8 @@ def screenshot_prepare(hourtype):
             x = int(xyobj[0]) / 2
             y = int(xyobj[1]) / 1.05
             os.system('adb shell \"input tap %s %s\"' % (x, y))
+
+        os.system("adb shell \"input keyevent 26\"")
     except Exception:
         print("screenshot_prepare error")
         # traceback.print_exc()
