@@ -16,6 +16,7 @@ import configparser
 import datetime
 import random
 import sched
+import requests
 scheduler = sched.scheduler(time.time, time.sleep)
 path = os.getcwd() + "\\DingDingClockIn\\"
 config = configparser.ConfigParser(allow_no_value=False)
@@ -165,17 +166,41 @@ def start_loop(hourtype,minute):
         scheduler.enter(60, 0, start_loop, (hourtype, minute, ))
         return
 
-# 是否是周末
+"""
+是否休息
+判断是否需要调休
+判断是否是法定节假日
+"""
 def is_weekend():
     """
-    :return: if weekend return False else return True
+    :return: 如果需要休息返回 False 否则 返回True
     """
-    now_time = datetime.datetime.now().strftime("%w")
-    if now_time == "6" or now_time == "0":
-        print("今天周末不打卡")
-        return False
-    else:
-        return True
+    holiday = False
+    try:
+        url = "http://timor.tech/api/holiday/info/" + time.strftime("%Y-%m-%d")
+        r = requests.get(url)
+        result = r.json()
+        code = result['code']
+        holidayInfo = result['holiday']
+        if code == 0:
+            if holidayInfo:
+                holiday = True
+                if holidayInfo['holiday']:
+                    print("今天是%s不打卡" % holidayInfo['name'])
+                    return False
+                else:
+                    print("今天是%s需要打卡" % holidayInfo['name'])
+                    return True
+    except Exception:
+        holiday = False
+
+    if not holiday:
+        now_time = datetime.datetime.now().strftime("%w")
+        if now_time == "6" or now_time == "0":
+            print("今天周末不打卡")
+            return False
+        else:
+            return True
 if __name__ == "__main__":
     # ======formal
     scheduler.enter(0, 0, incode_loop, (start_loop, random_minute(),))
